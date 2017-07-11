@@ -121,7 +121,7 @@ def get_post_id(username):
         print 'User does not exist!'
         exit()
     request_url = base_url + 'users/%s/media/recent/?access_token=%s' % (user_id, token)
-    print 'GET request url : %s' % (request_url)
+    print 'GET request url : %s' % request_url
     user_media = requests.get(request_url).json()
 
     if user_media['meta']['code'] == 200:
@@ -133,6 +133,19 @@ def get_post_id(username):
     else:
         print 'Status code other than 200 received!'
         exit()
+
+
+def get_like_list(username):
+    media_id = get_post_id(username)
+    if media_id is None:
+        print 'Post does not exist'
+        exit()
+    request_url = base_url + 'media/%s/likes?access_token=%s' % (media_id, token)
+    print 'GET request url : %s' % request_url
+    user_media = requests.get(request_url).json()
+    for x in range(user_media['data']):
+        print '%d.Username:%s' % (x, user_media['data'][x]['username']),
+        print '  Full name:%s' % user_media['data'][x]['full_name']
 
 
 # Function declaration to like the recent post of a user
@@ -159,6 +172,19 @@ def comment_a_post(username):
         print 'your comment was successful'
     else:
         print 'Your comment was unsuccessful please try again'
+
+
+def get_comment_list(username):
+    media_id = get_post_id(username)
+    if media_id is None:
+        print 'Post does not exist'
+        exit()
+    request_url = base_url + 'media/%s/comments?access_token=%s' % (media_id, token)
+    print 'GET request url : %s' % request_url
+    user_media = requests.get(request_url).json()
+    for x in range(user_media['data']):
+        print '%d.Username:%s' % (x, user_media['data'][x]['from']['username']),
+        print '  Comment:%s' % user_media['data'][x]['text']
 
 
 # Function declaration to make delete negative comments from the recent post
@@ -192,12 +218,6 @@ def delete_negative_comment(username):
         print 'Status code other than 200'
 
 
-
-        else:
-            print 'There are no existing comments on the post!'
-    else:
-        print 'Status code other than 200 received!'
-
 # Function to initiate instaBot
 def init_bot():
     while True:
@@ -224,7 +244,21 @@ def init_bot():
         elif choice == 'd':
             username = raw_input("Enter the username of person you want to download post")
             get_user_post(username)
-        elif choice == 'j':
+        elif choice == 'e':
+            username = raw_input("Enter the username of person you want to download post")
+            get_like_list(username)
+        elif choice == 'f':
+            username = raw_input("Enter the username of person you want to download post")
+            like_a_post(username)
+        elif choice == 'g':
+            username = raw_input("Enter the username of person you want to download post")
+            get_comment_list(username)
+        elif choice == 'g':
+            username = raw_input("Enter the username of person you want to download post")
+            comment_a_post(username)
+        elif choice == 'g':
+            username = raw_input("Enter the username of person you want to download post")
+            delete_negative_comment(username)
         elif choice == 'j':
             exit(1)
         else:
