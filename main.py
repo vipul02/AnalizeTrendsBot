@@ -1,5 +1,6 @@
-import requests
-import urllib
+import requests, urllib
+from textblob import TextBlob
+from textblob.sentiments import NaiveBayesAnalyzer
 
 # storing access token to app in a variable
 token = '3516265067.a606bd5.6ac0cfccc602439c9551e758fbc87212'
@@ -169,8 +170,34 @@ def delete_negative_comment(username):
 
     if comment_info['meta']['code'] == 200:
         if len(comment_info['data']):
+            for x in range(len(comment_info['data'])):
+                comment_id = comment_info['data'][x]['id']
+                comment_text =  comment_info['data'][x]['text']
+                check_comment = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer()).sentiment
+                if check_comment.p_neg > check_comment.p_pos :
+                    print "Negative comment : %s" %comment_text
+                    delete_url = base_url + '/media/%s/comments/%s?access_token=%s' %(media_id, comment_id, token)
+                    print 'DELETE request url: %s' % delete_url
+                    delete_info = requests.delete(request_url).json()
 
-            
+                    if delete_info['meta']['code'] == 200:
+                        print 'Post was deleted successfully'
+                    else:
+                        print 'Post was not deleted, status code other than 200'
+                else:
+                    print 'Positive comment: %s' % comment_text
+        else:
+            print 'There is no comment in your post'
+    else:
+        print 'Status code other than 200'
+
+
+
+        else:
+            print 'There are no existing comments on the post!'
+    else:
+        print 'Status code other than 200 received!'
+
 # Function to initiate instaBot
 def init_bot():
     while True:
@@ -180,6 +207,11 @@ def init_bot():
         print 'b.Get a friend\'s details of insta account'
         print 'c.Get your own recent post'
         print 'd.Get the recent post of a user by username'
+        print 'e.Get a list of people who have liked the recent post of a user'
+        print 'f.Like the recent post of a user'
+        print 'g.Get a list of comments on the recent post of a user'
+        print 'h.Make a comment on the recent post of a user'
+        print 'i.Delete negative comments from the recent post of a user'
         print 'j.Exit'
 
         choice = raw_input("\nSelect any option:")
@@ -192,6 +224,7 @@ def init_bot():
         elif choice == 'd':
             username = raw_input("Enter the username of person you want to download post")
             get_user_post(username)
+        elif choice == 'j':
         elif choice == 'j':
             exit(1)
         else:
