@@ -54,8 +54,7 @@ def get_user_id(username):
 
 
 # Function declaration to get the info of a user by username
-def get_user_info():
-    username = raw_input("Enter the username of person you want information")
+def get_user_info(username):
     user_id = get_user_id(username)
 
     request_url = base_url + 'users/%s/?access_token=%s' % (user_id, token)
@@ -231,6 +230,56 @@ def delete_negative_comment(username):
         print 'Status code other than 200'
 
 
+def likes_info(media_info):
+    if media_info['meta']['code'] == 200:
+        if len(media_info['data']):
+            # list of no. of likes on recent media
+            likes = []
+            for x in range(len(media_info['data'])):
+                likes.append(media_info['data'][x]['likes']['count'])
+            return likes
+        else:
+            print 'Post does\'nt exist'
+    else:
+        status_code_info(media_info)
+
+
+# function to download post with minimum no. of likes
+def down_min(likes, media_info):
+    # variable to calculate the no. of downloads
+    count = 0
+    # min() calculates the min value in the list
+    min_likes = min(likes)
+    for x in range(len(media_info['data'])):
+        if min_likes == media_info['data'][x]['likes']['count']:
+            img_name = media_info['data'][x]['id'] + '.png'
+            img_url = media_info['data'][x]['images']['standard_resolution']['url']
+            urllib.urlretrieve(img_url, img_name)
+            count += 1
+    if count > 0:
+        print '%d post download' % count
+    else:
+        print 'No post downloaded, some kind of error'
+
+
+# function to download post with minimum no. of likes
+def down_max(likes, media_info):
+    # variable to calculate the no. of downloads
+    count = 0
+    # max() calculates the max value in the list
+    max_likes = max(likes)
+    for x in range(len(media_info['data'])):
+        if max_likes == media_info['data'][x]['likes']['count']:
+            img_name = media_info['data'][x]['id'] + '.png'
+            img_url = media_info['data'][x]['images']['standard_resolution']['url']
+            urllib.urlretrieve(img_url, img_name)
+            count += 1
+    if count > 0:
+        print '%d post download' % count
+    else:
+        print 'No post downloaded, some kind of error'
+
+
 # function to download post with something special
 def download_post():
     print 'Select:'
@@ -238,33 +287,41 @@ def download_post():
     print '2.Download post of another user(must be sandbox user)'
     select = int(raw_input("Enter choice:"))
     if select == 1:
+        request_url = base_url + 'users/self/media/recent/?access_token=%s' % token
+        media_info = requests.get(request_url).json()
+        likes = likes_info(media_info)
         print 'What specifics do you want:'
         print '1.Download the post with minimum no. of likes'
         print '2.Download the post with maximum no. of likes'
         print '3.Go to previous menu'
         option = int(raw_input("Enter option:"))
         if option == 1:
-
+            down_min(likes, media_info)
         elif option == 2:
-
+            down_max(likes, media_info)
         elif option == 3:
             download_post()
         else:
             print 'Invalid choice'
     elif select == 2:
+        username = raw_input("Enter the username of person")
+        media_info = get_media_info_user(username)
+        likes = likes_info(media_info)
         print 'What specifics do you want:'
         print '1.Download the post with minimum no. of likes'
         print '2.Download the post with maximum no. of likes'
         print '3.Go to previous menu'
         option = int(raw_input("Enter option:"))
         if option == 1:
-
+            down_min(likes, media_info)
         elif option == 2:
-
+            down_max(likes, media_info)
         elif option == 3:
             download_post()
         else:
             print 'Invalid choice'
+
+
 print '\nWelcome to instaBot'
 
 
@@ -289,7 +346,8 @@ def init_bot():
         if choice == 1:
             self_info()
         elif choice == 2:
-            get_user_info()
+            username = raw_input("Enter the username of person")
+            get_user_info(username)
         elif choice == 3:
             get_own_post()
         elif choice == 4:
