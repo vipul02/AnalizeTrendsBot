@@ -1,6 +1,8 @@
-import requests, urllib
+import requests
+import urllib
 from textblob import TextBlob
 from textblob.sentiments import NaiveBayesAnalyzer
+from matplotlib import pyplot
 
 # storing access token to app in a variable
 token = '3516265067.a606bd5.6ac0cfccc602439c9551e758fbc87212'
@@ -322,6 +324,42 @@ def download_post():
             print 'Invalid choice'
 
 
+# function to plot the graph of Trending Hash Tags
+def plot_graph():
+
+    # function to calculate the counts of hash tag
+    def count_the_hash_tag():
+        for j in range(num_hashtags):
+            request_url = base_url + 'tags/%s/?access_token=%s' % (hash_tags[j], token)
+            print 'GET request url : %s' % request_url
+            tag_info = requests.get(request_url).json()
+            if len(tag_info['data']):
+                counts_of_hash_tag.append(tag_info['data']['media_count'])
+            else:
+                print 'No.such tag found'
+    x = []
+    counts_of_hash_tag = []
+    hash_tags = []
+    choice = raw_input('Do u want to enter your own hashtags or want predefined(y for your own/n for predefined):')
+    if choice.upper() == 'Y':
+        num_hashtags = int(raw_input('Enter the no. of popular hashtags do you want to enter:'))
+        print 'Enter %d hash tags:'
+        for i in range(num_hashtags):
+            hash_tags.append(input())
+            x.append(i + 1)
+    elif choice.upper() == 'N':
+        x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        hash_tags = ['love', 'modi', 'gst', 'picoftheday', 'photooftheday', 'technology', 'humanity',
+                     'anime', 'naruto', 'life']
+    count_the_hash_tag()
+    pyplot.bar(x, counts_of_hash_tag, tick_label=hash_tags, color=['red', 'blue', 'orange'], width=0.8)
+    pyplot.xlabel('x-axis')
+    pyplot.ylabel('y-axis')
+    pyplot.title('two lines on the same graph')
+    pyplot.legend()
+    pyplot.show()
+
+
 print '\nWelcome to instaBot'
 
 
@@ -340,6 +378,7 @@ def init_bot():
         print '9.Make a comment on the recent post of a user'
         print '10.Delete negative comments from the recent post of a user'
         print '11.Download post with something special'
+        print '12.Plot the Bar graph of Trending Hash Tags'
         print '0.Exit'
 
         choice = raw_input("\nSelect any option:")
@@ -372,6 +411,8 @@ def init_bot():
             delete_negative_comment(username)
         elif choice == 11:
             download_post()
+        elif choice == 12:
+            plot_graph()
         elif choice == 0:
             exit(1)
         else:
