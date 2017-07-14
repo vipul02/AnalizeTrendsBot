@@ -1,5 +1,6 @@
 import requests
 import urllib
+import urllib2
 from textblob import TextBlob
 from textblob.sentiments import NaiveBayesAnalyzer
 from matplotlib import pyplot
@@ -30,8 +31,8 @@ def self_info():
     if user_info['meta']['code'] == 200:
         if len(user_info['data']):
             print 'Username:%s' % user_info['data']['username']
-            print 'No. of Followers:%s' % user_info['data']['counts']['followed_by']
-            print 'No. of people you follow:%s' % user_info['data']['counts']['follows']
+            print 'No. of followers:%s' % user_info['data']['counts']['followed_by']
+            print 'No. of followings:%s' % user_info['data']['counts']['follows']
             print 'No. of posts:%s' % user_info['data']['counts']['media']
         else:
             print 'You don\'t exist or not have signup on instagram or you don\'t have any data'
@@ -66,8 +67,8 @@ def get_user_info(username):
     if user_info['meta']['code'] == 200:
         if len(user_info['data']):
             print 'Username:%s' % user_info['data']['username']
-            print 'No. of Followers:%s' % user_info['data']['counts']['followed_by']
-            print 'No. of people you follow:%s' % user_info['data']['counts']['follows']
+            print 'No. of followers:%s' % user_info['data']['counts']['followed_by']
+            print 'No. of followings:%s' % user_info['data']['counts']['follows']
             print 'No. of posts:%s' % user_info['data']['counts']['media']
         else:
             print 'There is no data for user'
@@ -75,21 +76,34 @@ def get_user_info(username):
         status_code_info(user_info)
 
 
-# Function declaration to get your recent post
-def get_own_post():
-    request_url = base_url + 'users/self/media/recent/?access_token=%s' % token
-    print 'GET request url is %s' % request_url
-    media_info = requests.get(request_url).json()
+# function to download post by media info
+def down_func(media_info):
     if media_info['meta']['code'] == 200:
         if len(media_info['data']):
             img_name = media_info['data'][0]['id'] + '.png'
             img_url = media_info['data'][0]['images']['standard_resolution']['url']
             urllib.urlretrieve(img_url, img_name)
-            print 'Your image is downloaded'
+            print 'Image downloaded'
+            if media_info['data'][0]['type'] == 'video':
+                video_name = media_info['data'][0]['id'] + '.mp4'
+                video_url = media_info['data'][0]['videos']['standard_resolution']['url']
+                with open(video_name, 'wb') as f:
+                    f.write(urllib2.urlopen(video_url).read())
+                print 'video downloaded'
+            else:
+                pass
         else:
             print 'Post does\'nt exist'
     else:
         status_code_info(media_info)
+
+
+# Function declaration to download your recent post
+def down_own_post():
+    request_url = base_url + 'users/self/media/recent/?access_token=%s' % token
+    print 'GET request url is %s' % request_url
+    media_info = requests.get(request_url).json()
+    down_func(media_info)
 
 
 # function to get media info of user by username
@@ -99,6 +113,12 @@ def get_media_info_user(username):
     print 'GET request url : %s' % request_url
     media_info = requests.get(request_url).json()
     return media_info
+
+
+# Function declaration to download the recent post of a user by username
+def down_user_post(username):
+    media_info = get_media_info_user(username)
+    down_func(media_info)
 
 
 # Function declaration to get the ID of the recent post of a user by username
@@ -114,19 +134,30 @@ def get_post_id(username):
         status_code_info(media_info)
 
 
-# Function declaration to download the recent post of a user by username
-def get_user_post(username):
-    media_info = get_media_info_user(username)
-    if media_info['meta']['code'] == 200:
-        if len(media_info['data']):
-            img_name = media_info['data'][0]['id'] + '.png'
-            img_url = media_info['data'][0]['images']['standard_resolution']['url']
-            urllib.urlretrieve(img_url, img_name)
-            print 'Image of %s is downloaded' % username
-        else:
-            print 'Post does\'nt exist'
+# function to get the list of likes on a "particular post" of the username you entered
+# either u can enter name of access token owner or sandbox user
+# only the likes sandbox users and access token owner will be shown
+def get_like_list(username):
+    media_id = get_post_id(username)
+    request_url = base_url + 'media/%s/likes?access_token=%s' % (media_id, token)
+    print 'GET request url : %s' % request_url
+    user_media = requests.get(request_url).json()
+    for x in range(len(user_media['data'])):
+        print '%d.Username:%s' % (x+1, user_media['data'][x]['username'])
+        print '  Full name:%s' % user_media['data'][x]['full_name']
+
+
+# Function declaration to like the recent post of a username provided
+def like_a_post(username):
+    media_id = get_post_id(username)
+    request_url = base_url + 'media/%s/likes' % media_id
+    payload = {"access_token": token}
+    print 'POST request url : %s' % request_url
+    like = requests.post(request_url, payload).json()
+    if like['meta']['code'] == 200:
+        print 'your like was successful'
     else:
-        status_code_info(media_info)
+        print 'Your like was unsuccessful please try again'
 
 
 # a function declaration to get the recent media liked by the user.
@@ -138,51 +169,11 @@ def recent_media_liked():
         if len(media_info['data']):
             for x in range(len(media_info['data'])):
                 print 'ID of post liked: %s' % media_info['data'][x]['id']
-                print '%s has liked your post' % media_info['data'][x]['user']['username']
+                print '%s has liked the post' % media_info['data'][x]['user']['username']
         else:
             print 'You have not liked any post, you are just too picky!!'
     else:
         status_code_info(media_info)
-
-
-# function to get the list of likes on a "particular post" of the username you entered
-# either u can enter name of access token owner or sandbox user
-# only the likes sandbox users and access token owner will be shown
-def get_like_list(username):
-    media_id = get_post_id(username)
-    request_url = base_url + 'media/%s/likes?access_token=%s' % (media_id, token)
-    print 'GET request url : %s' % request_url
-    user_media = requests.get(request_url).json()
-    for x in range(user_media['data']):
-        print '%d.Username:%s' % (x, user_media['data'][x]['username']),
-        print '  Full name:%s' % user_media['data'][x]['full_name']
-
-
-# Function declaration to like the recent post of a username provided
-def like_a_post(username):
-    media_id = get_post_id(username)
-    request_url = base_url + 'users/media/%s/likes' % media_id
-    payload = {"access_token": token}
-    print 'POST request url : %s' % request_url
-    like = requests.post(request_url, payload).json()
-    if like['meta']['code'] == 200:
-        print 'your like was successful'
-    else:
-        print 'Your like was unsuccessful please try again'
-
-
-# Function declaration to comment the recent post of a user
-def comment_a_post(username):
-    media_id = get_post_id(username)
-    request_url = base_url + 'users/media/%s/comments' % media_id
-    comment = raw_input("Enter the comment you want to make on post:")
-    payload = {"access_token": token, "text": comment}
-    print 'POST request url : %s' % request_url
-    like = requests.post(request_url, payload).json()
-    if like['meta']['code'] == 200:
-        print 'your comment was successful'
-    else:
-        print 'Your comment was unsuccessful please try again'
 
 
 # function to get list of comments made on post
@@ -193,12 +184,26 @@ def get_comment_list(username):
     print 'GET request url : %s' % request_url
     user_media = requests.get(request_url).json()
     if user_media['data']:
-        for x in range(user_media['data']):
-            print '%d.Username:%s' % (x, user_media['data'][x]['from']['username']),
+        for x in range(len(user_media['data'])):
+            print '%d.Username:%s' % (x+1, user_media['data'][x]['from']['username'])
             print '  Comment:%s' % user_media['data'][x]['text']
         print 'Successfully fetching the list of comments'
     else:
         print 'There is no comment on the post'
+
+
+# Function declaration to comment the recent post of a user
+def comment_a_post(username):
+    media_id = get_post_id(username)
+    request_url = base_url + 'media/%s/comments' % media_id
+    comment = raw_input("Enter the comment you want to make on post:")
+    payload = {"access_token": token, "text": comment}
+    print 'POST request url : %s' % request_url
+    like = requests.post(request_url, payload).json()
+    if like['meta']['code'] == 200:
+        print 'your comment was successful'
+    else:
+        print 'Your comment was unsuccessful please try again'
 
 
 # Function declaration to make delete negative comments from the recent post
@@ -216,9 +221,9 @@ def delete_negative_comment(username):
                 check_comment = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer()).sentiment
                 if check_comment.p_neg > check_comment.p_pos :
                     print "Negative comment : %s" % comment_text
-                    delete_url = base_url + '/media/%s/comments/%s?access_token=%s' % (media_id, comment_id, token)
+                    delete_url = base_url + 'media/%s/comments/%s?access_token=%s' % (media_id, comment_id, token)
                     print 'DELETE request url: %s' % delete_url
-                    delete_info = requests.delete(request_url).json()
+                    delete_info = requests.delete(delete_url).json()
 
                     if delete_info['meta']['code'] == 200:
                         print 'Post was deleted successfully'
@@ -340,8 +345,8 @@ def plot_graph():
             x.append(i + 1)
     elif choice.upper() == 'N':
         x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        hash_tags = ['india', 'cool', 'ca', 'rain', 'snow', 'technology', 'humanity',
-                     'anime', 'naruto', 'deathnote']
+        hash_tags = ['india', 'cool', 'paris', 'rain', 'snow', 'beauty', 'morning',
+                     'anime', 'insta', 'cute']
         num_hashtags = 10
     else:
         print "Wrong choice"
@@ -355,11 +360,11 @@ def plot_graph():
         else:
             print "#%s tag not found" % hash_tags[j]
             init_bot()
-    pyplot.bar(x, counts_of_hash_tag, tick_label=hash_tags, color=['red', 'blue', 'orange'], width=0.8)
+    pyplot.bar(x, counts_of_hash_tag, tick_label=hash_tags,
+               color=['red', 'blue', 'orange', 'yellow', 'green'], width=0.8)
     pyplot.xlabel('<-----Names of hash tags----->')
     pyplot.ylabel('<-----No. of counts/occurrence of hash tags----->')
     pyplot.title('Frequency graph of occurrence of hash tags')
-    pyplot.legend()
     pyplot.show()
 
 
@@ -388,29 +393,29 @@ def init_bot():
         if choice == 1:
             self_info()
         elif choice == 2:
-            username = raw_input("Enter the username of person")
+            username = raw_input("Enter the username of person:")
             get_user_info(username)
         elif choice == 3:
-            get_own_post()
+            down_own_post()
         elif choice == 4:
-            username = raw_input("Enter the username of person you want to download post")
-            get_user_post(username)
+            username = raw_input("Enter the username of person:")
+            down_user_post(username)
         elif choice == 5:
-            username = raw_input("Enter the username of person")
+            username = raw_input("Enter the username of person:")
             get_like_list(username)
         elif choice == 6:
-            username = raw_input("Enter the username of person")
+            username = raw_input("Enter the username of person:")
             like_a_post(username)
         elif choice == 7:
             recent_media_liked()
         elif choice == 8:
-            username = raw_input("Enter the username of person")
+            username = raw_input("Enter the username of person:")
             get_comment_list(username)
         elif choice == 9:
-            username = raw_input("Enter the username of person")
+            username = raw_input("Enter the username of person:")
             comment_a_post(username)
         elif choice == 10:
-            username = raw_input("Enter the username of person")
+            username = raw_input("Enter the username of person:")
             delete_negative_comment(username)
         elif choice == 11:
             download_post()
