@@ -326,36 +326,39 @@ def download_post():
 
 # function to plot the graph of Trending Hash Tags
 def plot_graph():
-
-    # function to calculate the counts of hash tag
-    def count_the_hash_tag():
-        for j in range(num_hashtags):
-            request_url = base_url + 'tags/%s/?access_token=%s' % (hash_tags[j], token)
-            print 'GET request url : %s' % request_url
-            tag_info = requests.get(request_url).json()
-            if len(tag_info['data']):
-                counts_of_hash_tag.append(tag_info['data']['media_count'])
-            else:
-                print 'No.such tag found'
     x = []
     counts_of_hash_tag = []
     hash_tags = []
+    num_hashtags = 0
     choice = raw_input('Do u want to enter your own hashtags or want predefined(y for your own/n for predefined):')
+
     if choice.upper() == 'Y':
         num_hashtags = int(raw_input('Enter the no. of popular hashtags do you want to enter:'))
         print 'Enter %d hash tags:'
         for i in range(num_hashtags):
-            hash_tags.append(input())
+            hash_tags.append(raw_input())
             x.append(i + 1)
     elif choice.upper() == 'N':
         x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        hash_tags = ['love', 'modi', 'gst', 'picoftheday', 'photooftheday', 'technology', 'humanity',
-                     'anime', 'naruto', 'life']
-    count_the_hash_tag()
+        hash_tags = ['india', 'cool', 'ca', 'rain', 'snow', 'technology', 'humanity',
+                     'anime', 'naruto', 'deathnote']
+        num_hashtags = 10
+    else:
+        print "Wrong choice"
+
+    for j in range(num_hashtags):
+        request_url = base_url + 'tags/%s/?access_token=%s' % (hash_tags[j], token)
+        print 'GET request url : %s' % request_url
+        tag_info = requests.get(request_url).json()
+        if len(tag_info['data']):
+            counts_of_hash_tag.append(tag_info['data']['media_count'])
+        else:
+            print "#%s tag not found" % hash_tags[j]
+            init_bot()
     pyplot.bar(x, counts_of_hash_tag, tick_label=hash_tags, color=['red', 'blue', 'orange'], width=0.8)
-    pyplot.xlabel('x-axis')
-    pyplot.ylabel('y-axis')
-    pyplot.title('two lines on the same graph')
+    pyplot.xlabel('<-----Names of hash tags----->')
+    pyplot.ylabel('<-----No. of counts/occurrence of hash tags----->')
+    pyplot.title('Frequency graph of occurrence of hash tags')
     pyplot.legend()
     pyplot.show()
 
@@ -381,7 +384,7 @@ def init_bot():
         print '12.Plot the Bar graph of Trending Hash Tags'
         print '0.Exit'
 
-        choice = raw_input("\nSelect any option:")
+        choice = int(raw_input("\nSelect any option:"))
         if choice == 1:
             self_info()
         elif choice == 2:
